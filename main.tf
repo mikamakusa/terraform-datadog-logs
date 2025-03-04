@@ -107,155 +107,320 @@ resource "datadog_logs_custom_destination" "custom_destination" {
 }
 
 resource "datadog_logs_custom_pipeline" "custom_pipeline" {
-  name = ""
-  description = ""
-  is_enabled = true
-  tags = []
+  count = length(var.custom_pipeline)
+  name = lookup(var.custom_pipeline[count.index], "name")
+  description = lookup(var.custom_pipeline[count.index], "description")
+  is_enabled = lookup(var.custom_pipeline[count.index], "is_enabled")
+  tags = lookup(var.custom_pipeline[count.index], "tags")
 
   dynamic "filter" {
-    for_each = ""
+    for_each = try(lookup(var.custom_pipeline[count.index], "filter") == null ? [] : ["filter"])
     content {
-      query = ""
+      query = lookup(filter.value, "query")
     }
   }
 
   dynamic "processor" {
-    for_each = ""
+    for_each = try(lookup(var.custom_pipeline[count.index], "processor") == null ? [] : ["processor"])
     content {
-      arithmetic_processor {
-        expression = ""
-        target     = ""
-        is_enabled = true
-        is_replace_missing = true
-        name = ""
+      dynamic "arithmetic_processor" {
+        for_each = try(lookup(processor.value, "arithmetic_processor") == null ? [] : ["arithmetic_processor"])
+        iterator = arithmetic
+        content {
+          expression = lookup(arithmetic.value, "expression")
+          target     = lookup(arithmetic.value, "target")
+          is_enabled = lookup(arithmetic.value, "is_enabled")
+          is_replace_missing = lookup(arithmetic.value, "is_replace_missing")
+          name = lookup(arithmetic.value, "name")
+        }
       }
-      attribute_remapper {
-        source_type = ""
-        sources = []
-        target      = ""
-        target_type = ""
-        is_enabled = true
-        name = ""
-        override_on_conflict = true
-        preserve_source = true
-        target_format = ""
+
+      dynamic "attribute_remapper" {
+        for_each = try(lookup(processor.value, "attribute_remapper") == null ? [] : ["attribute_remapper"])
+        iterator = attribute
+        content {
+          source_type = lookup(attribute.value, "source_type")
+          sources = lookup(attribute.value, "sources")
+          target      = lookup(attribute.value, "target")
+          target_type = lookup(attribute.value, "target_type")
+          is_enabled = lookup(attribute.value, "is_enabled")
+          name = lookup(attribute.value, "name")
+          override_on_conflict = lookup(attribute.value, "override_on_conflict")
+          preserve_source = lookup(attribute.value, "preserve_source")
+          target_format = lookup(attribute.value, "target_format")
+        }
       }
-      category_processor {
-        target = ""
-        is_enabled = true
-        name = ""
-        category {
-          name = ""
-          filter {
-            query = ""
+
+      dynamic "category_processor" {
+        for_each = try(lookup(processor.value, "category_processor") == null ? [] : ["category_processor"])
+        iterator = category
+        content {
+          target = lookup(category.value, "target")
+          is_enabled = lookup(category.value, "is_enabled")
+          name = lookup(category.value, "name")
+
+          dynamic "category" {
+            for_each = try(lookup(category.value, "category") == null ? [] : ["category"])
+            content {
+              name = lookup(category.value, "name")
+
+              dynamic "filter" {
+                for_each = lookup(category.value, "filter")
+                content {
+                  query = lookup(filter.value, "query")
+                }
+              }
+            }
           }
         }
       }
-      date_remapper {
-        sources = []
-        is_enabled = true
-        name = ""
-      }
-      geo_ip_parser {
-        sources = []
-        target = ""
-        is_enabled = true
-        name = ""
-      }
-      grok_parser {
-        source = ""
-        name = ""
-        is_enabled = true
-        samples = []
-        grok {
-          match_rules   = ""
-          support_rules = ""
+      dynamic "date_remapper" {
+        for_each = try(lookup(processor.value, "date_remapper") == null ? [] : ["date_remapper"])
+        iterator = date
+        content {
+          sources = lookup(date.value, "sources")
+          is_enabled = lookup(date.value, "is_enabled")
+          name = lookup(date.value, "name")
         }
       }
-      lookup_processor {
-        lookup_table = []
-        source = ""
-        target = ""
-        default_lookup = ""
-        is_enabled = true
-        name = ""
-      }
-      message_remapper {
-        sources = []
-        is_enabled  = true
-        name = ""
-      }
-      pipeline {
-        name = ""
-        description = ""
-        is_enabled = true
-        tags = []
-        filter {
-          query = ""
+
+      dynamic "geo_ip_parser" {
+        for_each = try(lookup(processor.value, "geo_ip_parser") == null ? [] : ["geo_ip_parser"])
+        iterator = geo_ip
+        content {
+          sources = lookup(geo_ip.value, "sources")
+          target = lookup(geo_ip.value, "target")
+          is_enabled = lookup(geo_ip.value, "is_enabled")
+          name = lookup(geo_ip.value, "name")
         }
       }
-      reference_table_lookup_processor {
-        lookup_enrichment_table = ""
-        source                  = ""
-        target                  = ""
-        is_enabled = true
-        name = ""
+
+      dynamic "grok_parser" {
+        for_each = try(lookup(processor.value, "grok_parser") == null ? [] : ["grok_parser"])
+        iterator = grok_parser
+        content {
+          source = lookup(grok_parser.value, "source")
+          name = lookup(grok_parser.value, "name")
+          is_enabled = lookup(grok_parser.value, "is_enabled")
+          samples = lookup(grok_parser.value, "samples")
+
+          dynamic "grok" {
+            for_each = try(lookup(grok_parser.value, "grok") == null ? [] : ["grok"])
+            content {
+              match_rules   = lookup(grok.value, "match_rules")
+              support_rules = lookup(grok.value, "support_rules")
+            }
+          }
+        }
       }
-      service_remapper {
-        sources = []
-        is_enabled  = true
-        name = ""
+
+      dynamic "lookup_processor" {
+        for_each = try(lookup(processor.value, "lookup_processor") == null ? [] : ["lookup_processor"])
+        iterator = lookup_processor
+        content {
+          lookup_table = lookup(lookup_processor.value, "lookup_table")
+          source = lookup(lookup_processor.value, "source")
+          target = lookup(lookup_processor.value, "target")
+          default_lookup = lookup(lookup_processor.value, "default_lookup")
+          is_enabled = lookup(lookup_processor.value, "is_enabled")
+          name = lookup(lookup_processor.value, "name")
+        }
       }
-      status_remapper {
-        sources = []
-        is_enabled  = true
-        name = ""
+
+      dynamic "message_remapper" {
+        for_each = try(lookup(processor.value, "message_remapper") == null ? [] : ["message_remapper"])
+        iterator = message_remapper
+        content {
+          sources = lookup(message_remapper.value, "sources")
+          is_enabled  = lookup(message_remapper.value, "is_enabled")
+          name = lookup(message_remapper.value, "name")
+        }
       }
-      string_builder_processor {
-        target   = ""
-        template = ""
-        is_enabled = true
-        is_replace_missing = true
-        name = ""
+
+      dynamic "pipeline" {
+        for_each = try(lookup(processor.value, "pipeline") == null ? [] : ["pipeline"])
+        iterator = pipeline
+        content {
+          name = lookup(pipeline.value, "name")
+          description = lookup(pipeline.value, "description")
+          is_enabled = lookup(pipeline.value, "is_enabled")
+          tags = lookup(pipeline.value, "tags")
+
+          dynamic "filter" {
+            for_each = try(lookup(pipeline.value, "filter") == null ? [] : ["filter"])
+            content {
+              query = lookup(filter.value, "query")
+            }
+          }
+        }
       }
-      trace_id_remapper {
-        sources = []
-        is_enabled  = true
-        name = ""
+
+      dynamic "reference_table_lookup_processor" {
+        for_each = try(lookup(processor.value, "reference_table_lookup_processor") == null ? [] : ["reference_table_lookup_processor"])
+        iterator = reference_table_lookup_processor
+        content {
+          lookup_enrichment_table = lookup(reference_table_lookup_processor.value, "lookup_enrichment_table")
+          source                  = lookup(reference_table_lookup_processor.value, "source")
+          target                  = lookup(reference_table_lookup_processor.value, "target")
+          is_enabled = lookup(reference_table_lookup_processor.value, "is_enabled")
+          name = lookup(reference_table_lookup_processor.value, "name")
+        }
       }
-      url_parser {
-        sources = []
-        target = ""
-        is_enabled  = true
-        normalize_ending_slashes = true
-        name = ""
+
+      dynamic "service_remapper" {
+        for_each = try(lookup(processor.value, "service_remapper") == null ? [] : ["service_remapper"])
+        iterator = service_remapper
+        content {
+          sources = lookup(service_remapper.value, "sources")
+          is_enabled  = lookup(service_remapper.value, "is_enabled")
+          name = lookup(service_remapper.value, "name")
+        }
       }
-      user_agent_parser {
-        sources = []
-        target = ""
-        is_enabled = true
-        is_encoded = true
-        name = ""
+
+      dynamic "status_remapper" {
+        for_each = try(lookup(processor.value, "status_remapper") == null ? [] : ["status_remapper"])
+        iterator = status_remapper
+        content {
+          sources = lookup(status_remapper.value, "sources")
+          is_enabled  = lookup(status_remapper.value, "is_enabled")
+          name = lookup(status_remapper.value, "name")
+        }
+      }
+
+      dynamic "string_builder_processor" {
+        for_each = try(lookup(processor.value, "string_builder_processor") == null ? [] : ["string_builder_processor"])
+        iterator = string_builder_processor
+        content {
+          target   = lookup(string_builder_processor.value, "target")
+          template = lookup(string_builder_processor.value, "template")
+          is_enabled = lookup(string_builder_processor.value, "is_enabled")
+          is_replace_missing = lookup(string_builder_processor.value, "is_replace_missing")
+          name = lookup(string_builder_processor.value, "name")
+        }
+      }
+
+      dynamic "trace_id_remapper" {
+        for_each = try(lookup(processor.value, "trace_id_remapper") == null ? [] : ["trace_id_remapper"])
+        iterator = trace_id_remapper
+        content {
+          sources = lookup(trace_id_remapper.value, "sources")
+          is_enabled  = lookup(trace_id_remapper.value, "is_enabled")
+          name = lookup(trace_id_remapper.value, "name")
+        }
+      }
+
+      dynamic "url_parser" {
+        for_each = try(lookup(processor.value, "url_parser") == null ? [] : ["url_parser"])
+        iterator = url_parser
+        content {
+          sources = lookup(url_parser.value, "sources")
+          target = lookup(url_parser.value, "target")
+          is_enabled  = lookup(url_parser.value, "is_enabled")
+          normalize_ending_slashes = lookup(url_parser.value, "normalize_ending_slashes")
+          name = lookup(url_parser.value, "name")
+        }
+      }
+
+      dynamic "user_agent_parser" {
+        for_each = try(lookup(processor.value, "user_agent_parser") == null ? [] : ["user_agent_parser"])
+        iterator = user_agent_parser
+        content {
+          sources = lookup(user_agent_parser.value, "sources")
+          target = lookup(user_agent_parser.value, "target")
+          is_enabled = lookup(user_agent_parser.value, "is_enabled")
+          is_encoded = lookup(user_agent_parser.value, "is_encoded")
+          name = lookup(user_agent_parser.value, "name")
+        }
       }
     }
   }
 }
 
 resource "datadog_logs_index" "index" {
-  name = ""
+  count = length(var.index)
+  name = lookup(var.index[count.index], "name")
+  daily_limit = lookup(var.index[count.index], "daily_limit")
+  daily_limit_warning_threshold_percentage = lookup(var.index[count.index], "daily_limit_warning_threshold_percentage")
+  disable_daily_limit = lookup(var.index[count.index], "disable_daily_limit")
+  flex_retention_days = lookup(var.index[count.index], "flex_retention_days")
+  retention_days = lookup(var.index[count.index], "retention_days")
+
+  dynamic "filter" {
+    for_each = try(lookup(var.index[count.index], "filter") == null ? [] : ["filter"])
+    content {
+      query = lookup(filter.value, "query")
+    }
+  }
+
+  dynamic "daily_limit_reset" {
+    for_each = try(lookup(var.index[count.index], "daily_limit_reset") == null ? [] : ["daily_limit_reset"])
+    content {
+      reset_time       = lookup(daily_limit_reset.value, "reset_time")
+      reset_utc_offset = lookup(daily_limit_reset.value, "reset_utc_offset")
+    }
+  }
+
+  dynamic "exclusion_filter" {
+    for_each = try(lookup(var.index[count.index], "exclusion_filter") == null ? [] : ["exclusion_filter"])
+    content {
+      is_enabled = lookup(exclusion_filter.value, "is_enabled")
+      name = lookup(exclusion_filter.value, "name")
+
+      dynamic "filter" {
+        for_each = try(lookup(exclusion_filter.value, "filter") == null ? [] : ["filter"])
+        content {
+          query = lookup(filter.value, "query")
+          sample_rate = lookup(filter.value, "sample_rate")
+        }
+      }
+    }
+  }
 }
 
 resource "datadog_logs_index_order" "index_order" {
-  indexes = []
+  count = length(var.index_order)
+  indexes = [try(element(datadog_logs_index.index.*.id, lookup(var.index_order[count.index], "index_id")))]
+  name = lookup(var.index_order[count.index], "name")
 }
 
-resource "datadog_logs_integration" "integration" {}
+resource "datadog_logs_integration" "integration" {
+  count = length(var.integration)
+  is_enabled = lookup(var.integration[count.index], "is_enabled")
+}
 
 resource "datadog_logs_metric" "metric" {
-  name = ""
+  count = length(var.metric)
+  name = lookup(var.metric[count.index], "name")
+
+  dynamic "compute" {
+    for_each = lookup(var.metric[count.index], "compute")
+    content {
+      aggregation_type = lookup(compute.value, "aggregation_type")
+      include_percentiles = tr(lookup(compute.value, "include_percentiles"))
+      path = try(lookup(compute.value, "path"))
+    }
+  }
+
+  dynamic "filter" {
+    for_each = lookup(var.metric[count.index], "filter")
+    content {
+      query = lookup(filter.value, "query")
+    }
+  }
+
+  dynamic "group_by" {
+    for_each = try(lookup(var.metric[count.index], "group_by") == null ? [] : ["group_by"])
+    content {
+      path     = lookup(group_by.value, "path")
+      tag_name = lookup(group_by.value, "tag_name")
+    }
+  }
 }
 
 resource "datadog_logs_pipeline_order" "pipeline_order" {
-  name = ""
-  pipelines = []
+  count = length(var.pipeline_order)
+  name = lookup(var.pipeline_order[count.index], "name")
+  pipelines = try(
+    element(datadog_logs_custom_pipeline.custom_pipeline.*.id, lookup(var.pipeline_order[count.index], "pipelineçid"))
+  )
 }

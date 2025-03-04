@@ -1,0 +1,3 @@
+variable "archive" {
+  type = any
+}

@@ -1,0 +1,4 @@
+module "archive" {
+  source = "../../"
+  archive = []
+}

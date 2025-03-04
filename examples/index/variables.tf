@@ -1,0 +1,3 @@
+variable "index" {
+  type = any
+}
